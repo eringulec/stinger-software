@@ -32,21 +32,19 @@ class Detection(Node):
         self.frame = np.zeros([])
         self.get_logger().info("Perception node initialized! Let there be light. You can see now.")
 
-        # TODO: 6.1.a Understanding HSV
-        # True or False, as my Value approaches 0, the color becomes darker.
-        self.question_1 = None
-        # True or False, as my Saturation increases, the color becomes whiter.
-        self.question_2 = None
-        # [0, 255), what hue value might cyan be.
-        self.question_3 = None
-        ### STUDENT CODE HERE
+        # Red in the low end of the hue wheel (0 - 10), minimum S and V filter
+        # pixels that are gray or black.
+        self.red_lower1 = np.array([0, 100, 100])
+        self.red_upper1 = np.array([10, 255, 255])
 
-        ### END STUDENT CODE
+        # Red in the high end of the hue wheel (170 - 179), since red wraps around
+        # at 0, we need two ranges.
+        self.red_lower2 = np.array([170, 100, 100])
+        self.red_upper2 = np.array([179, 255, 255])
 
-        self.red_lower = np.zeros((3,))
-        self.red_upper = np.zeros((3,))
-        self.green_lower = np.zeros((3,))
-        self.green_upper = np.zeros((3,))
+        # Green in the hue wheel (40 - 80)
+        self.green_lower = np.array([40, 100, 100])
+        self.green_upper = np.array([80, 255, 255])
 
     def image_callback(self, msg):
         """Process the camera feed to detect red, green, and yellow buoys."""
