@@ -46,6 +46,9 @@ class Detection(Node):
         self.green_lower = np.array([40, 100, 100])
         self.green_upper = np.array([80, 255, 255])
 
+        # Minimum circle radius in pixels that count as a buoy, smaller radius blobs are noise
+        self.min_radius = 20
+
     def image_callback(self, msg):
         """Process the camera feed to detect red, green, and yellow buoys."""
         self.frame = self.bridge.imgmsg_to_cv2(msg, 'bgr8') # Opencv wants BGR, but ROS defaults RGB
@@ -110,6 +113,10 @@ class Detection(Node):
         for cnt in contours:
             (x, y), radius = cv2.minEnclosingCircle(cnt)
             cv2.circle(self.frame, (int(x), int(y)), int(radius), (255, 0, 0), 3)
+
+            # only blobs big enough to be a buoy count
+            if radius >= self.min_radius:
+                detected.append((x, y, radius))
 
         cv2.imshow("original_frame", self.frame)
         detected_sorted = sorted(detected, key=lambda x: x[2], reverse=True)
