@@ -74,14 +74,12 @@ class Detection(Node):
         # Combine red masks for separate ranges in one
         red_mask = cv2.bitwise_or(red_mask1, red_mask2)
 
-
-        
         cv2.imshow("Red_mask", red_mask)
         cv2.imshow("Green_mask", green_mask)
         cv2.waitKey(1)
 
         # Find contours for each color
-        red_buoy_list = self.find_circles(red_mask, )
+        red_buoy_list = self.find_circles(red_mask)
         green_buoy_list = self.find_circles(green_mask)
 
         self.get_logger().info(f"Red buoys: {red_buoy_list}")
@@ -103,15 +101,15 @@ class Detection(Node):
     def find_circles(self, mask):
         """Find circular contours in a binary mask."""
 
-        
         detected = []
 
-        
+        # find the contours
+        result = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours = result[0]
+
         for cnt in contours:
             (x, y), radius = cv2.minEnclosingCircle(cnt)
             cv2.circle(self.frame, (int(x), int(y)), int(radius), (255, 0, 0), 3)
-            
-
 
         cv2.imshow("original_frame", self.frame)
         detected_sorted = sorted(detected, key=lambda x: x[2], reverse=True)
