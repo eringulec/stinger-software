@@ -59,14 +59,22 @@ class Detection(Node):
             self.get_logger().info("Waitng for frame")
             return
 
-        # Init to zeros
-        red_mask = np.zeros_like(self.hsv)
-        green_mask = np.zeros_like(self.hsv)
+        # Mask variables hold an array of arrays where each array represents
+        # one row of pixels in the image in order, and if that pixel's HSV is in the range for
+        # all the three parameters of H, S, V, then the array element gets 255 for that pixel,
+        # representing white, whereas the ones that aren't in the range get 0, representing black.
 
-        # TODO: 6.1.b Masking 
-        ### STUDENT CODE HERE
+        # Green Mask
+        green_mask = cv2.inRange(self.hsv, self.green_lower, self.green_upper)
 
-        ### END STUDENT CODE
+        # Red Masks for both ranges
+        red_mask1 = cv2.inRange(self.hsv, self.red_lower1, self.red_upper1)
+        red_mask2 = cv2.inRange(self.hsv, self.red_lower2, self.red_upper2)
+
+        # Combine red masks for separate ranges in one
+        red_mask = cv2.bitwise_or(red_mask1, red_mask2)
+
+
         
         cv2.imshow("Red_mask", red_mask)
         cv2.imshow("Green_mask", green_mask)
@@ -95,19 +103,16 @@ class Detection(Node):
     def find_circles(self, mask):
         """Find circular contours in a binary mask."""
 
-        # TODO: 6.1.c Contours
-        ### STUDENT CODE HERE
-
-        ### END STUDENT CODE
+        
         detected = []
 
-        # TODO: 6.1.d Understanding and tuning pixel radius
+        
         for cnt in contours:
             (x, y), radius = cv2.minEnclosingCircle(cnt)
             cv2.circle(self.frame, (int(x), int(y)), int(radius), (255, 0, 0), 3)
-            ### STUDENT CODE HERE
+            
 
-            ### END STUDENT CODE
+
         cv2.imshow("original_frame", self.frame)
         detected_sorted = sorted(detected, key=lambda x: x[2], reverse=True)
         return detected_sorted
