@@ -35,7 +35,7 @@ class VelocityController(Node):
         ### STUDENT CODE HERE
         # Initial simulation gains; validate/tune on the actual boat model.
         for axis, gains in [('surge', (20.0, 5.0, 1.0)),
-                            ('yaw', (10.0, 2.0, 0.5))]:
+                            ('yaw', (20.0, 8.0, 1.0))]:
             for term, default in zip(('Kp', 'Ki', 'Kd'), gains):
                 name = f'{term}_{axis}'
                 value = float(self.declare_parameter(name, default).value)

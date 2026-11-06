@@ -8,15 +8,20 @@ not a heading angle). Both use commanded minus measured velocity and PID feedbac
 
 ## What has been verified
 
-Eight standalone logic tests pass, including the tutorial's numerical assertions,
-first-sample derivative handling, repeated/backward/tiny/large time intervals,
-NaN/Inf input rejection and recovery, signed output saturation, bounded integrals,
-anti-windup/unwinding, zero error, and reverse motion. These use ROS doubles and do
-not establish DDS connectivity, Gazebo response, or the tuning autograder result.
-Docker was not running on the development machine, so the commands below require
-verification in your tutorial container. The initial gains are starting values,
-not measured tuning results. Section 5.1.g remains to be validated in simulation.
+Eight standalone logic tests pass. The full ROS 2 Jazzy tutorial autograder was
+also run in the user's Docker container on November 6, 2026: all 18 Q5.1.a-g
+checks passed. Surge RMSE was 0.0129757 m/s and yaw RMSE was 0.0276548 rad/s,
+both below 0.075. The verified gains are surge P=20, I=5, D=1 and yaw P=20,
+I=8, D=1. This verifies the tutorial's combined 0.3 m/s surge / 0.2 rad/s yaw
+scenario in simulation, not physical boat performance or all operating conditions.
 
+The localization launch now remaps navsat's `imu` and `gps/fix` inputs to the
+Stinger sensor topics and enables simulation time on navsat and the IMU
+republisher. Before correction, filtered surge was zero while the simulated boat
+was moving; after correction, filtered and ground-truth forward speeds agreed.
+Original container files were backed up under
+`/home/ros-tutorial/colcon_ws/controller_test_backups/20261106-213419/`.
+The user-supplied EKF configuration was preserved.
 Sources inspected: the fork's README, INSTALL, controller setup/launch files,
 vehicle simulation, spawn launch, bridge config and throttle allocator, plus the
 linked [ROS Tutorial](https://github.com/gt-marine-robotics-group/ROS_Tutorial/blob/main/README.md),
@@ -158,9 +163,10 @@ Expect all Q5.1.a-f checks to pass. For Q5.1.g it commands surge 0.3 m/s and yaw
 values are below 0.075 over the remaining observations. It should progress to
 400 observations and print results; a lack of iterations means no filtered odometry.
 
-The fork still has TODOs in `ekf.yaml` and `localization.launch.py` from Topic 4.
-Those must be completed for the unmodified full grader to receive correct
-`/odometry/filtered`. Check:
+The localization remappings needed by this test are included in this change.
+The container's existing EKF sensor-selection settings were preserved; on a
+separate fresh checkout, ensure Topic 4 has configured IMU and GPS fusion.
+To check that the full grader receives correct `/odometry/filtered`, use:
 
 ```bash
 ros2 topic hz /odometry/filtered
@@ -237,10 +243,10 @@ stopping the controllers. A zero velocity command can request braking force;
 it does not necessarily produce an immediate zero wrench with PID active.
 
 Optional plotting: `ros2 run plotjuggler plotjuggler`. Track the commanded speeds,
-measured speeds, wrench, and both thruster commands. Tune P first, then D to damp
+measured speeds, wrench, and both thruster commands. For further operating conditions, tune P first, then D to damp
 oscillation, then I to remove steady error. Restart the node with new gain
 parameters, e.g. append `-p Kp_surge:=20.0 -p Ki_surge:=5.0 -p Kd_surge:=1.0`.
-Record RMSE and saturation before calling the gains tuned.
+Record RMSE and saturation for each new operating condition.
 
 ## Limits and remaining integration constraints
 
