@@ -27,13 +27,14 @@ def generate_launch_description():
             package='robot_localization',
             executable='navsat_transform_node',
             name='navsat_transform_node',
-            parameters=[navsat_transform_file_path],
+            parameters=[navsat_transform_file_path, {'use_sim_time': True}],
             respawn=True,
             remappings=[
             # TODO: 4.4.b Navsat Node
             # Example: (topic, remaped_topic)
             ### STUDENT CODE HERE
-
+                ('imu', '/stinger/imu/data'),
+                ('gps/fix', '/stinger/gps/fix'),
             ### END STUDENT CODE
             ],
         ),
@@ -41,6 +42,7 @@ def generate_launch_description():
             package='stinger_bringup',
             executable='imu_republisher',
             name='imu_republisher',
+            parameters=[{'use_sim_time': True}],
             output='screen'
         )
     ])
