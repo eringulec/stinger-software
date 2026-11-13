@@ -32,21 +32,22 @@ class Detection(Node):
         self.frame = np.zeros([])
         self.get_logger().info("Perception node initialized! Let there be light. You can see now.")
 
-        # TODO: 6.1.a Understanding HSV
-        # True or False, as my Value approaches 0, the color becomes darker.
-        self.question_1 = None
-        # True or False, as my Saturation increases, the color becomes whiter.
-        self.question_2 = None
-        # [0, 255), what hue value might cyan be.
-        self.question_3 = None
-        ### STUDENT CODE HERE
+        # Red in the low end of the hue wheel (0 - 10), minimum S and V filter
+        # pixels that are gray or black.
+        self.red_lower1 = np.array([0, 100, 100])
+        self.red_upper1 = np.array([10, 255, 255])
 
-        ### END STUDENT CODE
+        # Red in the high end of the hue wheel (170 - 179), since red wraps around
+        # at 0, we need two ranges.
+        self.red_lower2 = np.array([170, 100, 100])
+        self.red_upper2 = np.array([179, 255, 255])
 
-        self.red_lower = np.zeros((3,))
-        self.red_upper = np.zeros((3,))
-        self.green_lower = np.zeros((3,))
-        self.green_upper = np.zeros((3,))
+        # Green in the hue wheel (40 - 80)
+        self.green_lower = np.array([40, 100, 100])
+        self.green_upper = np.array([80, 255, 255])
+
+        # Minimum circle radius in pixels that count as a buoy, smaller radius blobs are noise
+        self.min_radius = 20
 
     def image_callback(self, msg):
         """Process the camera feed to detect red, green, and yellow buoys."""
@@ -61,21 +62,27 @@ class Detection(Node):
             self.get_logger().info("Waitng for frame")
             return
 
-        # Init to zeros
-        red_mask = np.zeros_like(self.hsv)
-        green_mask = np.zeros_like(self.hsv)
+        # Mask variables hold an array of arrays where each array represents
+        # one row of pixels in the image in order, and if that pixel's HSV is in the range for
+        # all the three parameters of H, S, V, then the array element gets 255 for that pixel,
+        # representing white, whereas the ones that aren't in the range get 0, representing black.
 
-        # TODO: 6.1.b Masking 
-        ### STUDENT CODE HERE
+        # Green Mask
+        green_mask = cv2.inRange(self.hsv, self.green_lower, self.green_upper)
 
-        ### END STUDENT CODE
-        
+        # Red Masks for both ranges
+        red_mask1 = cv2.inRange(self.hsv, self.red_lower1, self.red_upper1)
+        red_mask2 = cv2.inRange(self.hsv, self.red_lower2, self.red_upper2)
+
+        # Combine red masks for separate ranges in one
+        red_mask = cv2.bitwise_or(red_mask1, red_mask2)
+
         cv2.imshow("Red_mask", red_mask)
         cv2.imshow("Green_mask", green_mask)
         cv2.waitKey(1)
 
         # Find contours for each color
-        red_buoy_list = self.find_circles(red_mask, )
+        red_buoy_list = self.find_circles(red_mask)
         green_buoy_list = self.find_circles(green_mask)
 
         self.get_logger().info(f"Red buoys: {red_buoy_list}")
@@ -97,19 +104,20 @@ class Detection(Node):
     def find_circles(self, mask):
         """Find circular contours in a binary mask."""
 
-        # TODO: 6.1.c Contours
-        ### STUDENT CODE HERE
-
-        ### END STUDENT CODE
         detected = []
 
-        # TODO: 6.1.d Understanding and tuning pixel radius
+        # find the contours
+        result = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours = result[0]
+
         for cnt in contours:
             (x, y), radius = cv2.minEnclosingCircle(cnt)
             cv2.circle(self.frame, (int(x), int(y)), int(radius), (255, 0, 0), 3)
-            ### STUDENT CODE HERE
 
-            ### END STUDENT CODE
+            # only blobs big enough to be a buoy count
+            if radius >= self.min_radius:
+                detected.append((x, y, radius))
+
         cv2.imshow("original_frame", self.frame)
         detected_sorted = sorted(detected, key=lambda x: x[2], reverse=True)
         return detected_sorted
